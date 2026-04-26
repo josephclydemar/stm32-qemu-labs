@@ -1,6 +1,6 @@
 ASSEMBLER = arm-none-eabi-as
 LINKER = arm-none-eabi-ld
-ASSEMBLER_FLAGS = -mcpu=cortex-m3 -mthumb -g
+ASSEMBLER_FLAGS = -warn -fatal-warnings -mcpu=cortex-m3 -mthumb -g
 LINKER_FLAGS = -T linker.ld
 
 SOURCE_FILES = $(wildcard src/*.s)
@@ -9,7 +9,7 @@ TARGET_ELF = build/netduino2-firmware.elf
 TARGET_BIN = build/netduino2-firmware.bin
 TARGET_IHEX = build/netduino2-firmware.hex
 
-.PHONY: all clean debug run
+.PHONY: all clean run debug dump-asm dump-raw
 
 all: $(TARGET_BIN) $(TARGET_IHEX)
 
@@ -17,10 +17,16 @@ clean:
 	$(RM) $(wildcard build/*)
 
 run:
-	qemu-system-arm -M netduino2 -kernel $(TARGET_ELF) -S -gdb tcp::5400
+	qemu-system-arm -M netduino2 -kernel $(TARGET_ELF) -nographic -serial mon:stdio -S -gdb tcp::5400
 
 debug:
 	gdb-multiarch $(TARGET_ELF)
+
+dump-asm:
+	arm-none-eabi-objdump -d -Mforce-thumb $(TARGET_ELF) | less
+
+dump-raw:
+	arm-none-eabi-objdump -s $(TARGET_ELF) | less
 
 build/%.o: src/%.s
 	$(ASSEMBLER) $(ASSEMBLER_FLAGS) $< -o $@
